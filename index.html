@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Better In/Out Board</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+    }
+    .employee-container {
+      background: white;
+      border-radius: 10px;
+      padding: 15px 20px;
+      margin: 15px auto;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      max-width: 550px;
+    }
+    .employee-name {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    select,
+    textarea {
+      width: 100%;
+      font-size: 14px;
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    button {
+      display: block;
+      margin: 25px auto 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #statusMessage {
+      text-align: center;
+      font-weight: bold;
+      margin-top: 5px;
+      color: green;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>The Better In/Out Board</h2>
+
+  <div id="employeeList"></div>
+
+  <button onclick="saveData()">Save All</button>
+  <div id="statusMessage"></div>
+
+  <script>
+    const locations = [
+      "Price Office",
+      "Working from Home",
+      "In the Field",
+      "PTO"
+    ];
+
+    const employeeNames = [
+      "Mike Holler", "Spencer Wagner", "Matthew Krcma", "Matt Collins",
+      "Grant Griffiths", "Greg Gauper", "Jon Fisher",
+      "Michael Hackerott", "Hunter Van Goethem"
+    ];
+
+    const employeeList = document.getElementById("employeeList");
+    const statusMessage = document.getElementById("statusMessage");
+
+    // Build UI
+    employeeNames.forEach((name, i) => {
+      const div = document.createElement("div");
+      div.className = "employee-container";
+      div.innerHTML = `
+        <div class="employee-name">${name}</div>
+
+        <label>Location:</label>
+        <select id="location${i}">
+          <option value="">Select Location</option>
+          ${locations.map(l => `<option value="${l}">${l}</option>`).join("")}
+        </select>
+
+        <label>Notes:</label>
+        <textarea id="notes${i}" placeholder="Enter notes..."></textarea>
+      `;
+      employeeList.appendChild(div);
+    });
+
+    // Load saved data
+    function loadData() {
+      const saved = JSON.parse(localStorage.getItem("inOutBoard")) || {};
+      employeeNames.forEach((name, i) => {
+        if (saved[name]) {
+          document.getElementById(`location${i}`).value = saved[name].location || "";
+          document.getElementById(`notes${i}`).value = saved[name].notes || "";
+        }
+      });
+    }
+
+    // Save data
+    function saveData() {
+      const data = {};
+      employeeNames.forEach((name, i) => {
+        data[name] = {
+          location: document.getElementById(`location${i}`).value,
+          notes: document.getElementById(`notes${i}`).value
+        };
+      });
+
+      localStorage.setItem("inOutBoard", JSON.stringify(data));
+
+      statusMessage.style.color = "green";
+      statusMessage.textContent = "Saved!";
+      setTimeout(() => statusMessage.textContent = "", 2000);
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
