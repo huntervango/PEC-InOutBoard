@@ -32,7 +32,7 @@
     const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeHd6dGNsd3htZWh0Y3Z6a2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDc4OTksImV4cCI6MjA4NzE4Mzg5OX0.oTI6vrJ3mUiPZljkXm91HR4pAq1jlGHugfeiDu7TcgQ";
 
     const { createClient } = supabase;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
     const locations = ["Price Office", "Working from Home", "In the Field", "PTO"];
     const employeeNames = [
@@ -63,7 +63,7 @@
 
     async function loadData() {
       statusMessage.textContent = "Loading...";
-      const { data, error } = await supabase.from("inoutboard").select("*");
+      const { data, error } = await supabaseClient.from("inoutboard").select("*");
       if (error) {
         console.error("Load error:", error);
         statusMessage.style.color = "red";
@@ -88,7 +88,7 @@
         const location = document.getElementById(`location${i}`).value;
         const notes = document.getElementById(`notes${i}`).value;
 
-        const { error } = await supabase.from("inoutboard").upsert({
+        const { error } = await supabaseClient.from("inoutboard").upsert({
           name: employeeNames[i],
           location,
           notes,
@@ -109,7 +109,7 @@
     }
 
     // Realtime
-    supabase
+    supabaseClient
       .channel("inoutboard_changes")
       .on(
         "postgres_changes",
