@@ -1,10 +1,10 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabaseClient/supabaseClient-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-  const supabaseClientUrl = "https://uhxwztclwxmehtcvzkco.supabaseClient.co";
-  const supabaseClientKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeHd6dGNsd3htZWh0Y3Z6a2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDc4OTksImV4cCI6MjA4NzE4Mzg5OX0.oTI6vrJ3mUiPZljkXm91HR4pAq1jlGHugfeiDu7TcgQ";
-  const { createClient } = supabaseClient;
-  const supabaseClientClient = createClient(supabaseClientUrl, supabaseClientKey);
+  const supabaseUrl = "https://uhxwztclwxmehtcvzkco.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeHd6dGNsd3htZWh0Y3Z6a2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDc4OTksImV4cCI6MjA4NzE4Mzg5OX0.oTI6vrJ3mUiPZljkXm91HR4pAq1jlGHugfeiDu7TcgQ";
+  const { createClient } = supabase;
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   const locations = [
     "Price Office",
@@ -41,9 +41,9 @@
     employeeList.appendChild(div);
   });
 
-  // Load from supabaseClient
+  // Load from supabase
   async function loadData() {
-    const { data, error } = await supabaseClient
+    const { data, error } = await supabase
       .from("inoutboard")
       .select("*");
 
@@ -58,10 +58,10 @@
     }
   }
 
-  // Save to supabaseClient
+  // Save to supabase
   async function saveData() {
     for (let i = 0; i < employeeNames.length; i++) {
-      await supabaseClient
+      await supabase
         .from("inoutboard")
         .upsert({
           name: employeeNames[i],
@@ -77,7 +77,7 @@
   }
 
   // Real-time auto refresh
-  supabaseClient
+  supabase
     .channel("inoutboard_changes")
     .on(
       "postgres_changes",
