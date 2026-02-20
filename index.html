@@ -1,18 +1,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
   const supabaseUrl = "https://uhxwztclwxmehtcvzkco.supabase.co";
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeHd6dGNsd3htZWh0Y3Z6a2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDc4OTksImV4cCI6MjA4NzE4Mzg5OX0.oTI6vrJ3mUiPZljkXm91HR4pAq1jlGHugfeiDu7TcgQ";
+  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeHd6dGNsd3htZWh0Y3Z6a2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDc4OTksImV4cCI6MjA4NzE4Mzg5OX0.oTI6vrJ3mUiPZljkXm91HR4pAq1jlGHugfeiDu7TcgQ";
+
   const { createClient } = supabase;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  const locations = [
-    "Price Office",
-    "Working from Home",
-    "In the Field",
-    "PTO"
-  ];
-
+  const locations = ["Price Office", "Working from Home", "In the Field", "PTO"];
   const employeeNames = [
     "Mike Holler", "Spencer Wagner", "Matthew Krcma", "Matt Collins",
     "Grant Griffiths", "Greg Gauper", "Jon Fisher",
@@ -28,63 +22,62 @@
     div.className = "employee-container";
     div.innerHTML = `
       <div class="employee-name">${name}</div>
-
       <label>Location:</label>
       <select id="location${i}">
         <option value="">Select Location</option>
         ${locations.map(l => `<option value="${l}">${l}</option>`).join("")}
       </select>
-
       <label>Notes:</label>
       <textarea id="notes${i}" placeholder="Enter notes..."></textarea>
     `;
     employeeList.appendChild(div);
   });
 
-  // Load from supabase
   async function loadData() {
-    const { data, error } = await supabase
-      .from("inoutboard")
-      .select("*");
-
-    if (data) {
-      data.forEach(row => {
-        const index = employeeNames.indexOf(row.name);
-        if (index !== -1) {
-          document.getElementById(`location${index}`).value = row.location || "";
-          document.getElementById(`notes${index}`).value = row.notes || "";
-        }
-      });
+    const { data, error } = await supabase.from("inoutboard").select("*");
+    if (error) {
+      console.error("Load error:", error);
+      statusMessage.style.color = "red";
+      statusMessage.textContent = "Error loading data";
+      return;
     }
+    data?.forEach(row => {
+      const index = employeeNames.indexOf(row.name);
+      if (index !== -1) {
+        document.getElementById(`location${index}`).value = row.location || "";
+        document.getElementById(`notes${index}`).value = row.notes || "";
+      }
+    });
   }
 
-  // Save to supabase
   async function saveData() {
+    statusMessage.textContent = "Saving...";
     for (let i = 0; i < employeeNames.length; i++) {
-      await supabase
-        .from("inoutboard")
-        .upsert({
-          name: employeeNames[i],
-          location: document.getElementById(`location${i}`).value,
-          notes: document.getElementById(`notes${i}`).value,
-          updated_at: new Date()
-        });
+      const { error } = await supabase.from("inoutboard").upsert({
+        name: employeeNames[i],
+        location: document.getElementById(`location${i}`).value,
+        notes: document.getElementById(`notes${i}`).value,
+        updated_at: new Date().toISOString()
+      });
+      if (error) {
+        console.error("Save error for", employeeNames[i], ":", error);
+        statusMessage.style.color = "red";
+        statusMessage.textContent = "Save failed!";
+        return;
+      }
     }
-
     statusMessage.style.color = "green";
     statusMessage.textContent = "Saved!";
-    setTimeout(() => statusMessage.textContent = "", 2000);
+    setTimeout(() => (statusMessage.textContent = ""), 2000);
   }
 
-  // Real-time auto refresh
+  // Realtime
   supabase
     .channel("inoutboard_changes")
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "inoutboard" },
-      () => {
-        loadData();
-      }
+      () => loadData()
     )
     .subscribe();
 
