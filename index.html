@@ -75,7 +75,7 @@
         const index = employeeNames.indexOf(row.name);
         if (index !== -1) {
           document.getElementById(`location${index}`).value = row.location || "";
-          document.getElementById(`notes${index}`).value = row.notes || "";
+          document.getElementById(`notes${i}`).value = row.notes || "";
         }
       });
     }
