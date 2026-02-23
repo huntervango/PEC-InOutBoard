@@ -75,7 +75,7 @@
         const index = employeeNames.indexOf(row.name);
         if (index !== -1) {
           document.getElementById(`location${index}`).value = row.location || "";
-          document.getElementById(`notes${i}`).value = row.notes || "";
+          document.getElementById(`notes${index}`).value = row.notes || "";
         }
       });
     }
@@ -85,7 +85,7 @@
       statusMessage.style.color = "black";
 
       for (let i = 0; i < employeeNames.length; i++) {
-        const location = document.getElementById(`location${i}`).value;
+        const location = document.getElementById(`location${in}`).value;
         const notes = document.getElementById(`notes${i}`).value;
 
         const { error } = await supabaseClient.from("inoutboard").upsert({
