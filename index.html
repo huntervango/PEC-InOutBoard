@@ -4,10 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Employee Locations</title>
-
   <!-- Load Supabase client from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -77,12 +75,13 @@
   <button onclick="saveData()">Save All</button>
 
   <script>
-    // ── Replace these two lines with YOUR values ────────────────────────────────
-    const SUPABASE_URL = "https://uhxwztclwxmehtcvzkco.supabase.co";           // ← your project URL
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeHd6dGNsd3htZWh0Y3Z6a2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDc4OTksImV4cCI6MjA4NzE4Mzg5OX0.oTI6vrJ3mUiPZljkXm91HR4pAq1jlGHugfeiDu7TcgQ";  // ← anon public key
+    // ── Your Supabase credentials ──────────────────────────────────────────────
+    const SUPABASE_URL = "https://uhxwztclwxmehtcvzkco.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeHd6dGNsd3htZWh0Y3Z6a2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDc4OTksImV4cCI6MjA4NzE4Mzg5OX0.oTI6vrJ3mUiPZljkXm91HR4pAq1jlGHugfeiDu7TcgQ";
 
-    // Initialize Supabase client
- 
+    // Initialize Supabase client (this was the missing line)
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const locations = [
       "PEC Office", "Working from Home", "In the Field", "PTO"
     ];
@@ -152,34 +151,32 @@
     }
 
     // ── Save / Upsert all data to Supabase ─────────────────────────────────────
-async function saveData() {
-  statusEl.textContent = "Saving...";
+    async function saveData() {
+      statusEl.textContent = "Saving...";
 
-  const rows = uiElements.map(el => ({
-    name: el.name,
-    location: el.select.value || null,
-    notes: el.textarea.value.trim() || null
-  }));
+      const rows = uiElements.map(el => ({
+        name: el.name,
+        location: el.select.value || null,
+        notes: el.textarea.value.trim() || null
+      }));
 
-  try {
-    const { error } = await supabase
-      .from('employee_locations')
-      .upsert(rows, { onConflict: 'name' });
+      try {
+        const { error } = await supabase
+          .from('employee_locations')
+          .upsert(rows, { onConflict: 'name' });
 
-    if (error) throw error;
+        if (error) throw error;
 
-    statusEl.textContent = "Saved successfully!";
-    alert("Saved! Refreshing data...");
-
-    // Automatically reload the form with fresh DB values
-    await loadData();
-
-  } catch (err) {
-    console.error("Save failed:", err);
-    statusEl.textContent = "Error saving – check console";
-    alert("Save failed: " + (err.message || "Unknown error"));
-  }
-}
+        statusEl.textContent = "Saved successfully!";
+        alert("Saved! Refreshing data...");
+        // Automatically reload the form with fresh DB values
+        await loadData();
+      } catch (err) {
+        console.error("Save failed:", err);
+        statusEl.textContent = "Error saving – check console";
+        alert("Save failed: " + (err.message || "Unknown error"));
+      }
+    }
 
     // Load data when page opens
     loadData();
