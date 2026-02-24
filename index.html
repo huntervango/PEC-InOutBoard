@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Employee Locations</title>
+
+  <!-- Load Supabase client from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -59,76 +63,124 @@
     button:hover {
       background-color: #0056b3;
     }
+    #status {
+      text-align: center;
+      color: #555;
+      margin: 10px 0;
+    }
   </style>
 </head>
 <body>
   <h2>Employee Locations</h2>
-
+  <div id="status">Loading data...</div>
   <div id="employeeList"></div>
-
   <button onclick="saveData()">Save All</button>
 
   <script>
+    // ── Replace these two lines with YOUR values ────────────────────────────────
+    const SUPABASE_URL = 'https://uhxwztclwxmehtcvzkco.supabase.co';           // ← your project URL
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeHd6dGNsd3htZWh0Y3Z6a2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDc4OTksImV4cCI6MjA4NzE4Mzg5OX0.oTI6vrJ3mUiPZljkXm91HR4pAq1jlGHugfeiDu7TcgQ';  // ← anon public key
+
+    // Initialize Supabase client
+    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const locations = [
-      "New York",
-      "Chicago",
-      "Los Angeles",
-      "Dallas",
-      "Miami",
-      "Seattle",
-      "Denver",
-      "Atlanta",
-      "San Francisco"
+      "New York", "Chicago", "Los Angeles", "Dallas", "Miami",
+      "Seattle", "Denver", "Atlanta", "San Francisco"
     ];
 
-    // 9 random employee names
     const employeeNames = [
-      "Alice Johnson",
-      "Brian Lee",
-      "Carla Mendes",
-      "David Thompson",
-      "Elena Park",
-      "Frank Nguyen",
-      "Grace Wilson",
-      "Henry Patel",
-      "Isabella Chen"
+      "Alice Johnson", "Brian Lee", "Carla Mendes", "David Thompson",
+      "Elena Park", "Frank Nguyen", "Grace Wilson", "Henry Patel", "Isabella Chen"
     ];
 
-    const numEmployees = 9;
+    const numEmployees = employeeNames.length;
     const employeeList = document.getElementById("employeeList");
+    const statusEl = document.getElementById("status");
 
-    // Generate 9 employee sections
+    // Create UI elements
+    const uiElements = []; // will store {name, select, textarea} for each employee
+
     for (let i = 0; i < numEmployees; i++) {
       const div = document.createElement("div");
       div.className = "employee-container";
-
       div.innerHTML = `
         <div class="employee-name">${employeeNames[i]}</div>
-
         <label for="location${i}">Location:</label>
         <select id="location${i}">
           <option value="">Select Location</option>
           ${locations.map(loc => `<option value="${loc}">${loc}</option>`).join("")}
         </select>
-
         <label for="notes${i}">Notes:</label>
         <textarea id="notes${i}" placeholder="Enter notes or details..."></textarea>
       `;
       employeeList.appendChild(div);
+
+      uiElements.push({
+        name: employeeNames[i],
+        select: document.getElementById(`location${i}`),
+        textarea: document.getElementById(`notes${i}`)
+      });
     }
 
-    // Save all data (logs to console)
-    function saveData() {
-      const employees = [];
-      for (let i = 0; i < numEmployees; i++) {
-        const name = employeeNames[i];
-        const location = document.getElementById(`location${i}`).value;
-        const notes = document.getElementById(`notes${i}`).value;
-        employees.push({ name, location, notes });
+    // ── Load existing data from Supabase ───────────────────────────────────────
+    async function loadData() {
+      statusEl.textContent = "Loading data...";
+      try {
+        const { data, error } = await supabase
+          .from('employee_locations')
+          .select('name, location, notes')
+          .in('name', employeeNames);
+
+        if (error) throw error;
+
+        // Create a lookup map
+        const dataMap = new Map(data.map(row => [row.name, row]));
+
+        // Fill form fields
+        uiElements.forEach(el => {
+          const row = dataMap.get(el.name);
+          if (row) {
+            el.select.value = row.location || "";
+            el.textarea.value = row.notes || "";
+          }
+        });
+
+        statusEl.textContent = data.length > 0 ? "Data loaded" : "No previous data found";
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Error loading data – check console";
       }
-      console.log("Employee Data:", employees);
-      alert("Employee data saved! (Check console for details)");
     }
+
+    // ── Save / Upsert all data to Supabase ─────────────────────────────────────
+    async function saveData() {
+      statusEl.textContent = "Saving...";
+
+      const rows = uiElements.map(el => ({
+        name: el.name,
+        location: el.select.value || null,
+        notes: el.textarea.value.trim() || null
+      }));
+
+      try {
+        const { error } = await supabase
+          .from('employee_locations')
+          .upsert(rows, { onConflict: 'name' });   // upsert = insert or update
+
+        if (error) throw error;
+
+        statusEl.textContent = "Saved successfully!";
+        alert("All employee data saved to Supabase!");
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Error saving – check console";
+        alert("Save failed – check browser console for details");
+      }
+    }
+
+    // Load data when page opens
+    loadData();
   </script>
 </body>
 </html>
