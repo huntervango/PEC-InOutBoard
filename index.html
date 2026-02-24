@@ -2,129 +2,133 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>In/Out Board</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Locations</title>
   <style>
-    body { font-family: sans-serif; max-width: 900px; margin: 2rem auto; padding: 1rem; }
-    .employee-container { margin: 1.5rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 6px; }
-    .employee-name { font-weight: bold; margin-bottom: 0.5rem; font-size: 1.2rem; }
-    label { display: block; margin: 0.8rem 0 0.3rem; font-weight: 500; }
-    select, textarea { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
-    textarea { min-height: 80px; }
-    #statusMessage { margin-top: 1.5rem; font-weight: bold; min-height: 1.5rem; }
-    button { padding: 0.7rem 1.5rem; background: #0070f3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; }
-    button:hover { background: #005bb5; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+    }
+    .employee-container {
+      background: white;
+      border-radius: 10px;
+      padding: 15px 20px;
+      margin: 15px auto;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      max-width: 550px;
+    }
+    .employee-name {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    select, textarea {
+      width: 100%;
+      font-size: 14px;
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    button {
+      display: block;
+      margin: 25px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
-
-  <h1>Team In/Out Board</h1>
+  <h2>Employee Locations</h2>
 
   <div id="employeeList"></div>
 
-  <button onclick="saveData()">Save All Changes</button>
-
-  <div id="statusMessage"></div>
+  <button onclick="saveData()">Save All</button>
 
   <script>
-    const supabaseUrl = "https://uhxwztclwxmehtcvzkco.supabase.co";
-    const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeHd6dGNsd3htZWh0Y3Z6a2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDc4OTksImV4cCI6MjA4NzE4Mzg5OX0.oTI6vrJ3mUiPZljkXm91HR4pAq1jlGHugfeiDu7TcgQ";
-
-    const { createClient } = supabase;
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-
-    const locations = ["Price Office", "Working from Home", "In the Field", "PTO"];
-    const employeeNames = [
-      "Mike Holler", "Spencer Wagner", "Matthew Krcma", "Matt Collins",
-      "Grant Griffiths", "Greg Gauper", "Jon Fisher",
-      "Michael Hackerott", "Hunter Van Goethem"
+    const locations = [
+      "New York",
+      "Chicago",
+      "Los Angeles",
+      "Dallas",
+      "Miami",
+      "Seattle",
+      "Denver",
+      "Atlanta",
+      "San Francisco"
     ];
 
-    const employeeList = document.getElementById("employeeList");
-    const statusMessage = document.getElementById("statusMessage");
+    // 9 random employee names
+    const employeeNames = [
+      "Alice Johnson",
+      "Brian Lee",
+      "Carla Mendes",
+      "David Thompson",
+      "Elena Park",
+      "Frank Nguyen",
+      "Grace Wilson",
+      "Henry Patel",
+      "Isabella Chen"
+    ];
 
-    // Build UI
-    employeeNames.forEach((name, i) => {
+    const numEmployees = 9;
+    const employeeList = document.getElementById("employeeList");
+
+    // Generate 9 employee sections
+    for (let i = 0; i < numEmployees; i++) {
       const div = document.createElement("div");
       div.className = "employee-container";
+
       div.innerHTML = `
-        <div class="employee-name">${name}</div>
-        <label>Location:</label>
+        <div class="employee-name">${employeeNames[i]}</div>
+
+        <label for="location${i}">Location:</label>
         <select id="location${i}">
           <option value="">Select Location</option>
-          ${locations.map(l => `<option value="${l}">${l}</option>`).join("")}
+          ${locations.map(loc => `<option value="${loc}">${loc}</option>`).join("")}
         </select>
-        <label>Notes:</label>
-        <textarea id="notes${i}" placeholder="Enter notes..."></textarea>
+
+        <label for="notes${i}">Notes:</label>
+        <textarea id="notes${i}" placeholder="Enter notes or details..."></textarea>
       `;
       employeeList.appendChild(div);
-    });
-
-    async function loadData() {
-      statusMessage.textContent = "Loading...";
-      const { data, error } = await supabaseClient.from("inoutboard").select("*");
-      if (error) {
-        console.error("Load error:", error);
-        statusMessage.style.color = "red";
-        statusMessage.textContent = "Error loading data: " + error.message;
-        return;
-      }
-      statusMessage.textContent = "";
-      data?.forEach(row => {
-        const index = employeeNames.indexOf(row.name);
-        if (index !== -1) {
-          document.getElementById(`location${index}`).value = row.location || "";
-          document.getElementById(`notes${i}`).value = row.notes || "";
-        }
-      });
     }
 
-    async function saveData() {
-      statusMessage.textContent = "Saving...";
-      statusMessage.style.color = "black";
-
-      for (let i = 0; i < employeeNames.length; i++) {
-        const location = document.getElementById(`location${in}`).value;
+    // Save all data (logs to console)
+    function saveData() {
+      const employees = [];
+      for (let i = 0; i < numEmployees; i++) {
+        const name = employeeNames[i];
+        const location = document.getElementById(`location${i}`).value;
         const notes = document.getElementById(`notes${i}`).value;
-
-        const { error } = await supabaseClient.from("inoutboard").upsert({
-          name: employeeNames[i],
-          location,
-          notes,
-          updated_at: new Date().toISOString()
-        });
-
-        if (error) {
-          console.error("Save error for", employeeNames[i], ":", error);
-          statusMessage.style.color = "red";
-          statusMessage.textContent = `Save failed for ${employeeNames[i]}: ${error.message}`;
-          return;
-        }
+        employees.push({ name, location, notes });
       }
-
-      statusMessage.style.color = "green";
-      statusMessage.textContent = "Saved successfully!";
-      setTimeout(() => (statusMessage.textContent = ""), 3000);
+      console.log("Employee Data:", employees);
+      alert("Employee data saved! (Check console for details)");
     }
-
-    // Realtime
-    supabaseClient
-      .channel("inoutboard_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "inoutboard" },
-        () => {
-          console.log("Change detected — reloading data");
-          loadData();
-        }
-      )
-      .subscribe((status) => {
-        console.log("Realtime subscription status:", status);
-      });
-
-    // Initial load
-    loadData();
   </script>
 </body>
 </html>
