@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Employee Locations</title>
-  <!-- Load Supabase client from CDN -->
+  
+  <!-- Load Supabase client library (this exposes the global 'supabase') -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -75,11 +77,11 @@
   <button onclick="saveData()">Save All</button>
 
   <script>
-    // ── Your Supabase credentials ──────────────────────────────────────────────
+    // ── Supabase config ─────────────────────────────────────────────────────
     const SUPABASE_URL = "https://uhxwztclwxmehtcvzkco.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeHd6dGNsd3htZWh0Y3Z6a2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDc4OTksImV4cCI6MjA4NzE4Mzg5OX0.oTI6vrJ3mUiPZljkXm91HR4pAq1jlGHugfeiDu7TcgQ";
 
-    // Initialize Supabase client (this was the missing line)
+    // Create the actual client instance (this is the critical fix)
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const locations = [
@@ -96,7 +98,7 @@
     const statusEl = document.getElementById("status");
 
     // Create UI elements
-    const uiElements = []; // will store {name, select, textarea} for each employee
+    const uiElements = [];
 
     for (let i = 0; i < numEmployees; i++) {
       const div = document.createElement("div");
@@ -120,21 +122,19 @@
       });
     }
 
-    // ── Load existing data from Supabase ───────────────────────────────────────
+    // ── Load existing data from Supabase ────────────────────────────────────
     async function loadData() {
       statusEl.textContent = "Loading data...";
       try {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from('employee_locations')
           .select('name, location, notes')
           .in('name', employeeNames);
 
         if (error) throw error;
 
-        // Create a lookup map
         const dataMap = new Map(data.map(row => [row.name, row]));
 
-        // Fill form fields
         uiElements.forEach(el => {
           const row = dataMap.get(el.name);
           if (row) {
@@ -145,12 +145,12 @@
 
         statusEl.textContent = data.length > 0 ? "Data loaded" : "No previous data found";
       } catch (err) {
-        console.error(err);
+        console.error("Load error:", err);
         statusEl.textContent = "Error loading data – check console";
       }
     }
 
-    // ── Save / Upsert all data to Supabase ─────────────────────────────────────
+    // ── Save / Upsert all data to Supabase ──────────────────────────────────
     async function saveData() {
       statusEl.textContent = "Saving...";
 
@@ -161,7 +161,7 @@
       }));
 
       try {
-        const { error } = await supabase
+        const { error } = await db
           .from('employee_locations')
           .upsert(rows, { onConflict: 'name' });
 
@@ -169,8 +169,7 @@
 
         statusEl.textContent = "Saved successfully!";
         alert("Saved! Refreshing data...");
-        // Automatically reload the form with fresh DB values
-        await loadData();
+        await loadData(); // auto-refresh form with latest data
       } catch (err) {
         console.error("Save failed:", err);
         statusEl.textContent = "Error saving – check console";
