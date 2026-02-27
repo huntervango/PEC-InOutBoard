@@ -84,10 +84,10 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const locations = [
-  "PEC Office", "Working from Home", "In the Field", "PTO"
+  "PEC Office", "Working from Home", "In the Field", "PTO", "Out to Lunch"
 ];
 
-const resetAtMidnightLocations = new Set(["PEC Office", "Working from Home"]);
+const resetAtMidnightLocations = new Set(["PEC Office", "Working from Home", "Out to Lunch"]);
 
 const employeeNames = [
   "Mike Holler", "Spencer Wagner", "Matthew Krcma", "Matt Collins", "Hunter Van Goethem",
