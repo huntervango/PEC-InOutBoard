@@ -77,108 +77,128 @@
   <button onclick="saveData()">Save All</button>
 
   <script>
-    // ── Supabase config ─────────────────────────────────────────────────────
-    const SUPABASE_URL = "https://uhxwztclwxmehtcvzkco.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeHd6dGNsd3htZWh0Y3Z6a2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDc4OTksImV4cCI6MjA4NzE4Mzg5OX0.oTI6vrJ3mUiPZljkXm91HR4pAq1jlGHugfeiDu7TcgQ";
+// ── Supabase config ─────────────────────────────────────────────────────
+const SUPABASE_URL = "https://uhxwztclwxmehtcvzkco.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeHd6dGNsd3htZWh0Y3Z6a2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDc4OTksImV4cCI6MjA4NzE4Mzg5OX0.oTI6vrJ3mUiPZljkXm91HR4pAq1jlGHugfeiDu7TcgQ";
 
-    // Create the actual client instance (this is the critical fix)
-    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const locations = [
-      "PEC Office", "Working from Home", "In the Field", "PTO"
-    ];
+const locations = [
+  "PEC Office", "Working from Home", "In the Field", "PTO"
+];
 
-    const employeeNames = [
-      "Mike Holler", "Spencer Wagner", "Matthew Krcma", "Matt Collins", "Hunter Van Goethem",
-      "Grant Griffiths", "Jon Fisher", "Greg Gauper", "Michael Hackerott"
-    ];
+const resetAtMidnightLocations = new Set(["PEC Office", "Working from Home"]);
 
-    const numEmployees = employeeNames.length;
-    const employeeList = document.getElementById("employeeList");
-    const statusEl = document.getElementById("status");
+const employeeNames = [
+  "Mike Holler", "Spencer Wagner", "Matthew Krcma", "Matt Collins", "Hunter Van Goethem",
+  "Grant Griffiths", "Jon Fisher", "Greg Gauper", "Michael Hackerott"
+];
 
-    // Create UI elements
-    const uiElements = [];
+const employeeList = document.getElementById("employeeList");
+const statusEl = document.getElementById("status");
 
-    for (let i = 0; i < numEmployees; i++) {
-      const div = document.createElement("div");
-      div.className = "employee-container";
-      div.innerHTML = `
-        <div class="employee-name">${employeeNames[i]}</div>
-        <label for="location${i}">Location:</label>
-        <select id="location${i}">
-          <option value="">Select Location</option>
-          ${locations.map(loc => `<option value="${loc}">${loc}</option>`).join("")}
-        </select>
-        <label for="notes${i}">Notes:</label>
-        <textarea id="notes${i}" placeholder="Enter notes or details..."></textarea>
-      `;
-      employeeList.appendChild(div);
+const uiElements = [];
 
-      uiElements.push({
-        name: employeeNames[i],
-        select: document.getElementById(`location${i}`),
-        textarea: document.getElementById(`notes${i}`)
-      });
-    }
+for (let i = 0; i < employeeNames.length; i++) {
+  const div = document.createElement("div");
+  div.className = "employee-container";
+  div.innerHTML = `
+    <div class="employee-name">${employeeNames[i]}</div>
+    <label for="location${i}">Location:</label>
+    <select id="location${i}">
+      <option value="">Select Location</option>
+      ${locations.map(loc => `<option value="${loc}">${loc}</option>`).join("")}
+    </select>
+    <label for="notes${i}">Notes:</label>
+    <textarea id="notes${i}" placeholder="Enter notes or details..."></textarea>
+  `;
+  employeeList.appendChild(div);
+  uiElements.push({
+    name: employeeNames[i],
+    select: document.getElementById(`location${i}`),
+    textarea: document.getElementById(`notes${i}`)
+  });
+}
 
-    // ── Load existing data from Supabase ────────────────────────────────────
-    async function loadData() {
-      statusEl.textContent = "Loading data...";
-      try {
-        const { data, error } = await db
-          .from('employee_locations')
-          .select('name, location, notes')
-          .in('name', employeeNames);
+// ── Helper: Get today’s date string (YYYY-MM-DD) ────────────────────────
+function getTodayDateString() {
+  return new Date().toISOString().split('T')[0];
+}
 
-        if (error) throw error;
+// ── Load existing data + reset logic ────────────────────────────────────
+async function loadData() {
+  statusEl.textContent = "Loading data...";
+  const today = getTodayDateString();
 
-        const dataMap = new Map(data.map(row => [row.name, row]));
+  try {
+    // Fetch name, location, notes, last_set_date
+    const { data, error } = await db
+      .from('employee_locations')
+      .select('name, location, notes, last_set_date')
+      .in('name', employeeNames);
 
-        uiElements.forEach(el => {
-          const row = dataMap.get(el.name);
-          if (row) {
-            el.select.value = row.location || "";
-            el.textarea.value = row.notes || "";
-          }
-        });
+    if (error) throw error;
 
-        statusEl.textContent = data.length > 0 ? "Data loaded" : "No previous data found";
-      } catch (err) {
-        console.error("Load error:", err);
-        statusEl.textContent = "Error loading data – check console";
+    const dataMap = new Map(data.map(row => [row.name, row]));
+
+    uiElements.forEach(el => {
+      const row = dataMap.get(el.name);
+      if (!row) {
+        el.select.value = "";
+        el.textarea.value = "";
+        return;
       }
-    }
 
-    // ── Save / Upsert all data to Supabase ──────────────────────────────────
-    async function saveData() {
-      statusEl.textContent = "Saving...";
+      let location = row.location || "";
+      const lastDate = row.last_set_date || null;
 
-      const rows = uiElements.map(el => ({
-        name: el.name,
-        location: el.select.value || null,
-        notes: el.textarea.value.trim() || null
-      }));
-
-      try {
-        const { error } = await db
-          .from('employee_locations')
-          .upsert(rows, { onConflict: 'name' });
-
-        if (error) throw error;
-
-        statusEl.textContent = "Saved successfully!";
-        alert("Saved! Refreshing data...");
-        await loadData(); // auto-refresh form with latest data
-      } catch (err) {
-        console.error("Save failed:", err);
-        statusEl.textContent = "Error saving – check console";
-        alert("Save failed: " + (err.message || "Unknown error"));
+      // Reset logic: if it's PEC Office / WFH and date is not today → reset
+      if (resetAtMidnightLocations.has(location) && lastDate !== today) {
+        location = ""; // reset to "Select Location"
       }
-    }
 
-    // Load data when page opens
-    loadData();
-  </script>
+      el.select.value = location;
+      el.textarea.value = row.notes || "";
+    });
+
+    statusEl.textContent = data.length > 0 ? "Data loaded" : "No previous data found";
+  } catch (err) {
+    console.error("Load error:", err);
+    statusEl.textContent = "Error loading data – check console";
+  }
+}
+
+// ── Save / Upsert all data ──────────────────────────────────────────────
+async function saveData() {
+  statusEl.textContent = "Saving...";
+  const today = getTodayDateString();
+
+  const rows = uiElements.map(el => ({
+    name: el.name,
+    location: el.select.value || null,
+    notes: el.textarea.value.trim() || null,
+    last_set_date: el.select.value ? today : null   // only set date if location is chosen
+  }));
+
+  try {
+    const { error } = await db
+      .from('employee_locations')
+      .upsert(rows, { onConflict: 'name' });
+
+    if (error) throw error;
+
+    statusEl.textContent = "Saved successfully!";
+    alert("Saved! Refreshing data...");
+    await loadData(); // refresh form
+  } catch (err) {
+    console.error("Save failed:", err);
+    statusEl.textContent = "Error saving – check console";
+    alert("Save failed: " + (err.message || "Unknown error"));
+  }
+}
+
+// Initial load
+loadData();
+</script>
 </body>
 </html>
