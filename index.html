@@ -128,7 +128,7 @@ function getTodayDateString() {
 // ── Load existing data + reset logic ────────────────────────────────────
 async function loadData() {
   statusEl.textContent = "Loading data...";
-  const today = getTodayDateString();
+  const yesterday = getTodayDateString();
 
   try {
     // Fetch name, location, notes, last_set_date
