@@ -153,7 +153,7 @@ async function loadData() {
       const lastDate = row.last_set_date || null;
 
       // Reset logic: if it's PEC Office / WFH and date is not today → reset
-      if (resetAtMidnightLocations.has(location) && lastDate !== today) {
+      if (resetAtMidnightLocations.has(location) && lastDate !== yesterday) {
         location = ""; // reset to "Select Location"
       }
 
